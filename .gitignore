@@ -11,3 +11,6 @@ db.sqlite3
 .idea/
 .vscode/
 .env/
+# Ignore migrations except __init__.py files
+core/migrations/
+!core/migrations/__init__.py

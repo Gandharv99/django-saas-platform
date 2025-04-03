@@ -35,3 +35,42 @@ class Company(models.Model):
 
     def __str__(self):
         return self.name
+    
+class Project(models.Model):
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='projects')
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_projects')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.company.name})"
+    
+
+class Task(models.Model):
+    STATUS_CHOICES = (
+        ('todo', 'To Do'),
+        ('in_progress', 'In Progress'),
+        ('done', 'Done'),
+    )
+    PRIORITY_CHOICES = (
+    ('high', 'High'),
+    ('medium', 'Medium'),
+    ('low', 'Low'),
+    )
+
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks')
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    assigned_to = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='tasks')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='todo')
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    deadline = models.DateField(null=True, blank=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='tasks_created')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+
+    def __str__(self):
+        return f"{self.title} ({self.status})"

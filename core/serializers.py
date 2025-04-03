@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from core.models import User, Company
+from core.models import Project, Task, User, Company
 
 class UserCompanySignupSerializer(serializers.Serializer):
     email = serializers.EmailField()
@@ -20,3 +20,27 @@ class UserCompanySignupSerializer(serializers.Serializer):
             'user': user,
             'company': company
         }
+    
+class UserProfileSerializer(serializers.ModelSerializer):
+    company = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'name', 'company']
+    
+    def get_company(self, obj):
+        if hasattr(obj, 'company'):
+            return obj.company.name
+        return None
+    
+class ProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = ['id', 'name', 'description', 'created_at']
+
+
+class TaskSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Task
+        fields = ['id', 'title', 'description', 'created_at', 'project', 'assigned_to', 'status', 'priority', 'deadline', 'created_by', 'created_at', 'updated_at']
+        read_only_fields = ['created_at', 'updated_at']
