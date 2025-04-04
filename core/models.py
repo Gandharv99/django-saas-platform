@@ -1,7 +1,12 @@
+from datetime import timedelta
+from django.utils import timezone
+import uuid
 from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
-# Create your models here.
 
+
+def default_expiry():
+    return timezone.now() + timedelta(days=7)
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
@@ -18,11 +23,18 @@ class UserManager(BaseUserManager):
 
         return self.create_user(email, password, **extra_fields)
     
+ROLE_CHOICES = (
+    ('admin', 'Admin'),
+    ('senior_member', 'Senior Member'),
+    ('member', 'Member'),
+)
+    
 class User(AbstractBaseUser, PermissionsMixin):
     email = models.EmailField(unique=True)
     name = models.CharField(max_length=255)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='admin')
 
     objects = UserManager()
 
@@ -74,3 +86,19 @@ class Task(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.status})"
+    
+class Invite(models.Model):
+    email = models.EmailField()
+    company = models.ForeignKey(Company, on_delete=models.CASCADE, related_name='invites')
+    invited_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='invites_sent')
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='member')
+    token = models.UUIDField(default=uuid.uuid4, editable=False, unique=True)
+    accepted = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(default=default_expiry)
+
+    def __str__(self):
+        return f"Invite to {self.email} for {self.company.name}"
+    
+    def get_invite_link(self):
+        return f"http://saas.com/invite/accept/{self.token}/"

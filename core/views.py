@@ -1,8 +1,9 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, viewsets
-from core.models import Project, Task
-from core.serializers import ProjectSerializer, TaskSerializer, UserCompanySignupSerializer, UserProfileSerializer
+from core.models import Project, Task, Invite
+from core.permissions import IsCompanyAdmin
+from core.serializers import AcceptInviteSerializer, InviteSerializer, ProjectSerializer, TaskSerializer, UserCompanySignupSerializer, UserProfileSerializer
 from rest_framework.permissions import IsAuthenticated
 
 # Create your views here.
@@ -60,3 +61,28 @@ class TaskViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
+
+
+class InviteViewSet(viewsets.ModelViewSet):
+    serializer_class = InviteSerializer
+    permission_classes = [IsAuthenticated, IsCompanyAdmin]
+
+    def get_queryset(self):
+        return Invite.objects.filter(company=self.request.user.company)
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        invite = serializer.save()
+        return Response({
+            "message": "Invite sent successfully",
+            "invite_link": invite.get_invite_link(),
+        }, status=status.HTTP_201_CREATED)
+    
+class AcceptInviteView(APIView):
+    def post(self, request, token=None):
+        serializer = AcceptInviteSerializer(data=request.data, context={'token': token})
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response({"message": "User created successfully."}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
