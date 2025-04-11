@@ -90,3 +90,9 @@ class AcceptInviteSerializer(serializers.Serializer):
         invite.accepted = True
         invite.save()
         return user
+    
+
+class SimpleUserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'name', 'role']
